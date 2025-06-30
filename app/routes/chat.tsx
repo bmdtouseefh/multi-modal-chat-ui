@@ -56,52 +56,64 @@ export default function Chat() {
     <div className="w-full mx-auto p-4 h-screen flex flex-col bg-slate-300">
       <Card className="flex-1 flex flex-col">
         <CardHeader>
-          <CardTitle>Chat</CardTitle>
+          <CardTitle className="text-3xl font-bold">Chat</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col space-y-2">
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.sender === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+          {messages?.length === 0 ? (
+            <h1 className="text-3xl flex justify-center items-center h-full font-bold">
+              Welcome User
+            </h1>
+          ) : (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-4">
+                {messages.map((message) => (
                   <div
-                    className={`max-w-[80%] p-3 rounded-lg ${
+                    key={message.id}
+                    className={`flex ${
                       message.sender === "user"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-900"
+                        ? "justify-end"
+                        : "justify-start"
                     }`}
                   >
-                    <p className="text-sm">{message.content}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        message.sender === "user"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {isSubmitting && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 text-gray-900 p-3 rounded-lg">
-                    <p className="text-sm">Typing...</p>
+                ))}
+                {isSubmitting && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 text-gray-900 p-3 rounded-lg">
+                      <p className="text-sm">Typing...</p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+                )}
+              </div>
+            </ScrollArea>
+          )}
           <Form method="post" className="flex space-x-2">
             <Input
               name="message"
               value={input}
-              className="flex-1"
+              className="flex-1 h-12"
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything"
               //why and how
               disabled={isSubmitting}
             ></Input>
-            <Button type="submit" disabled={isSubmitting || !input.trim()}>
+            <Button
+              type="submit"
+              className="h-12"
+              disabled={isSubmitting || !input.trim()}
+            >
               Send
             </Button>
           </Form>
