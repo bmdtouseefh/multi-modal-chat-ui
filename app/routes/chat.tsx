@@ -10,15 +10,31 @@ import { useState, useEffect } from "react";
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const message = formData.get("message") as string;
-  const response = `AI: ${message}`;
-  return json({ message, response });
+
+  const response = await fetch("http://localhost:8000/text", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ message }),
+  });
+  const data = await response.json();
+  let aiResponse = "Sorry, I couldn't process that.";
+  if (Array.isArray(data)) {
+    const strings = data.filter((item) => typeof item === "string");
+    if (strings.length > 0) {
+      aiResponse = strings[strings.length - 1].trim(); // Get the last string and trim whitespace
+    }
+  }
+
+  return json({ message, response: aiResponse });
 }
 
 interface Message {
   id: string;
   content: string;
   sender: "user" | "ai";
-  timestamp: Date;
+  timestamp: string;
 }
 
 export default function Chat() {
@@ -40,13 +56,13 @@ export default function Chat() {
           id: Date.now().toString(),
           content: actionData.message,
           sender: "user",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
         },
         {
           id: (Date.now() + 1).toString(),
           content: actionData.response,
           sender: "ai",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
         },
       ]);
       setInput("");
@@ -84,7 +100,7 @@ export default function Chat() {
                     >
                       <p className="text-sm">{message.content}</p>
                       <p className="text-xs opacity-70 mt-1">
-                        {message.timestamp.toLocaleTimeString()}
+                        {message.timestamp}
                       </p>
                     </div>
                   </div>
@@ -99,11 +115,11 @@ export default function Chat() {
               </div>
             </ScrollArea>
           )}
-          <Form method="post" className="flex space-x-2">
+          <Form method="post" className="flex items-center space-x-2">
             <Input
               name="message"
               value={input}
-              className="flex-1 h-12"
+              className="flex-1 text-lg h-24 rounded-xl"
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything"
               //why and how
@@ -111,7 +127,7 @@ export default function Chat() {
             ></Input>
             <Button
               type="submit"
-              className="h-12"
+              className="h-12 rounded-sm"
               disabled={isSubmitting || !input.trim()}
             >
               Send
