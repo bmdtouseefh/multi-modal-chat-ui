@@ -6,6 +6,7 @@ import { json } from "@remix-run/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useState, useEffect } from "react";
+import { ArrowBigRight } from "lucide-react";
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
@@ -19,7 +20,7 @@ export async function action({ request }: { request: Request }) {
     body: JSON.stringify({ message }),
   });
   const data = await response.json();
-  let aiResponse = "Sorry, I couldn't process that.";
+  let aiResponse = data;
   if (Array.isArray(data)) {
     const strings = data.filter((item) => typeof item === "string");
     if (strings.length > 0) {
@@ -77,7 +78,7 @@ export default function Chat() {
         <CardContent className="flex flex-1 flex-col space-y-2">
           {messages?.length === 0 ? (
             <h1 className="text-3xl flex justify-center items-center h-full font-bold">
-              Welcome User
+              Welcome bro.
             </h1>
           ) : (
             <ScrollArea className="flex-1 pr-4">
@@ -98,10 +99,7 @@ export default function Chat() {
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {message.timestamp}
-                      </p>
+                      <p className=" text-2xl">{message.content}</p>
                     </div>
                   </div>
                 ))}
@@ -119,7 +117,7 @@ export default function Chat() {
             <Input
               name="message"
               value={input}
-              className="flex-1 text-lg h-24 rounded-xl"
+              className="flex-1 placeholder:text-3xl h-24 rounded-xl"
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything"
               //why and how
@@ -128,6 +126,7 @@ export default function Chat() {
             <Button
               type="submit"
               className="h-12 rounded-sm"
+              variant="secondary"
               disabled={isSubmitting || !input.trim()}
             >
               Send
