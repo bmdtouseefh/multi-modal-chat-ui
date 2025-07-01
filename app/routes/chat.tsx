@@ -1,12 +1,15 @@
 import { Form, useActionData, useNavigation } from "@remix-run/react";
 import { Input } from "~/components/ui/input";
+import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "~/components/ui/button";
 import { json } from "@remix-run/react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useState, useEffect } from "react";
-import { ArrowBigRight } from "lucide-react";
+import { AlignRightIcon, ArrowBigRight, ArrowRightIcon } from "lucide-react";
+import { Textarea } from "~/components/ui/textarea";
+import { ChatInput } from "~/components/chat-input";
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
@@ -114,23 +117,11 @@ export default function Chat() {
             </ScrollArea>
           )}
           <Form method="post" className="flex items-center space-x-2">
-            <Input
-              name="message"
-              value={input}
-              className="flex-1 placeholder:text-3xl h-24 rounded-xl"
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything"
-              //why and how
-              disabled={isSubmitting}
-            ></Input>
-            <Button
-              type="submit"
-              className="h-12 rounded-sm"
-              variant="secondary"
-              disabled={isSubmitting || !input.trim()}
-            >
-              Send
-            </Button>
+            <ChatInput
+              input={input}
+              setInput={setInput}
+              isSubmitting={isSubmitting}
+            ></ChatInput>
           </Form>
         </CardContent>
       </Card>
