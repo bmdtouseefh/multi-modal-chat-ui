@@ -1,37 +1,19 @@
 import { Form, useActionData, useNavigation } from "@remix-run/react";
-import { Input } from "~/components/ui/input";
-import TextareaAutosize from "react-textarea-autosize";
-import { Button } from "~/components/ui/button";
 import { json } from "@remix-run/react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useState, useEffect } from "react";
-import { AlignRightIcon, ArrowBigRight, ArrowRightIcon } from "lucide-react";
-import { Textarea } from "~/components/ui/textarea";
 import { ChatInput } from "~/components/chat-input";
+import Markdown from "react-markdown";
+import ReactMarkdown from "react-markdown";
+// import SpeechToText from "~/components/stt";
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const message = formData.get("message") as string;
 
-  const response = await fetch("http://localhost:8000/text", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ message }),
-  });
-  const data = await response.json();
-  let aiResponse = data;
-  if (Array.isArray(data)) {
-    const strings = data.filter((item) => typeof item === "string");
-    if (strings.length > 0) {
-      aiResponse = strings[strings.length - 1].trim(); // Get the last string and trim whitespace
-    }
-  }
-
-  return json({ message, response: aiResponse });
+  return json({ message });
 }
 
 interface Message {
@@ -39,19 +21,23 @@ interface Message {
   content: string;
   sender: "user" | "ai";
   timestamp: string;
+  streaming?: boolean;
 }
 
 export default function Chat() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const [stream, setStream] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [base64, setBase64] = useState([]);
+
   const actionData = useActionData<typeof action>();
-  //why
+
+  //fetch msgs.
   useEffect(() => {
     if (
       actionData?.message &&
-      actionData?.response &&
       !messages.find((m) => m.content === actionData.message)
     ) {
       setMessages((prev) => [
@@ -64,17 +50,57 @@ export default function Chat() {
         },
         {
           id: (Date.now() + 1).toString(),
-          content: actionData.response,
+          content: "",
           sender: "ai",
           timestamp: new Date().toISOString(),
+          streaming: true,
         },
       ]);
       setInput("");
+      streamer(actionData.message);
     }
-  }, [actionData, messages]);
+  }, [actionData]);
+
+  const streamer = async (message: string) => {
+    console.log(base64?.[0]);
+    const response = await fetch("http://localhost:8000/text", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ message }),
+    });
+    if (!response.body) return;
+
+    const reader = response.body.getReader();
+    if (!reader) return;
+
+    let resultText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const decoder = new TextDecoder();
+
+      const chunk = decoder.decode(value, { stream: true });
+      resultText += chunk;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.streaming ? { ...msg, content: resultText } : msg
+        )
+      );
+    }
+
+    // Mark as complete
+    setMessages((prev) =>
+      prev.map((msg) => (msg.streaming ? { ...msg, streaming: false } : msg))
+    );
+  };
+
   return (
-    <div className="w-full mx-auto p-4 h-screen flex flex-col bg-slate-300">
-      <Card className="flex-1 flex flex-col">
+    <div className="w-full mx-auto h-screen flex flex-col bg-slate-300">
+      <Card className="flex-1 flex flex-col mx-36">
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Chat</CardTitle>
         </CardHeader>
@@ -102,7 +128,7 @@ export default function Chat() {
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
-                      <p className=" text-2xl">{message.content}</p>
+                      <p className=" text-lg">{message.content}</p>
                     </div>
                   </div>
                 ))}
@@ -121,7 +147,10 @@ export default function Chat() {
               input={input}
               setInput={setInput}
               isSubmitting={isSubmitting}
+              base64={base64}
+              setBase64={setBase64}
             ></ChatInput>
+            {/* <SpeechToText input={input} setInput={setInput}></SpeechToText> */}
           </Form>
         </CardContent>
       </Card>
