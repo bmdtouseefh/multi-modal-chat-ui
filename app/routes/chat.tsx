@@ -62,7 +62,7 @@ export default function Chat() {
       // streamer(actionData.message);
       nonStreamer(actionData.message, aiMessageId);
     }
-  }, [messages]);
+  }, [actionData, messages]);
 
   const nonStreamer = async (text: string, aiMessageId: string) => {
     const response = await fetch("http://localhost:8000/image", {
