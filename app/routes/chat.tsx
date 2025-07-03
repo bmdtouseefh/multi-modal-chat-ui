@@ -40,35 +40,60 @@ export default function Chat() {
       actionData?.message &&
       !messages.find((m) => m.content === actionData.message)
     ) {
+      const userMessageId = `user-${Date.now()}`;
+      const aiMessageId = `ai-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: userMessageId,
           content: actionData.message,
           sender: "user",
           timestamp: new Date().toISOString(),
         },
         {
-          id: (Date.now() + 1).toString(),
-          content: "",
+          id: aiMessageId,
+          content: "loading",
           sender: "ai",
           timestamp: new Date().toISOString(),
           streaming: true,
         },
       ]);
       setInput("");
-      streamer(actionData.message);
+      // streamer(actionData.message);
+      nonStreamer(actionData.message, aiMessageId);
     }
-  }, [actionData]);
+  }, [messages]);
+
+  const nonStreamer = async (text: string, aiMessageId: string) => {
+    const response = await fetch("http://localhost:8000/image", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ message: text, files: base64 }),
+    });
+    if (!response.body) return;
+    const data = await response.json();
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === aiMessageId
+          ? {
+              ...msg,
+              content: data.message || data, // Adjust based on your API response structure
+              streaming: false,
+            }
+          : msg
+      )
+    );
+  };
 
   const streamer = async (message: string) => {
-    console.log(base64?.[0]);
     const response = await fetch("http://localhost:8000/text", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message: message, files: base64 }),
     });
     if (!response.body) return;
 

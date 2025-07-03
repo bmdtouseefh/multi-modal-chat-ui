@@ -18,10 +18,10 @@ export function ChatInput({
 }) {
   const handleFiles = async (e: any) => {
     const files = Array.from(e.target.files);
-    const base64proms = files.map((file) => toBas64);
+    const base64proms = files.map((file) => toBas64(file));
     const base64results = await Promise.all(base64proms);
     setBase64(base64results);
-    console.log(base64);
+    console.log(base64results);
   };
 
   const toBas64 = (file: any) => {
