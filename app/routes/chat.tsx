@@ -28,6 +28,8 @@ export default function Chat() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const [stream, setStream] = useState("");
+  const [audioBase64, setAudioBase64] = useState<string | null>(null);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [base64, setBase64] = useState([]);
@@ -60,7 +62,8 @@ export default function Chat() {
       ]);
       setInput("");
       // streamer(actionData.message);
-      nonStreamer(actionData.message, aiMessageId);
+      // audio(actionData.message, aiMessageId);
+      voicePrompt(actionData.message, aiMessageId);
     }
   }, [actionData, messages]);
 
@@ -71,6 +74,54 @@ export default function Chat() {
         "content-type": "application/json",
       },
       body: JSON.stringify({ message: text, files: base64 }),
+    });
+    if (!response.body) return;
+    const data = await response.json();
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === aiMessageId
+          ? {
+              ...msg,
+              content: data.message || data, // Adjust based on your API response structure
+              streaming: false,
+            }
+          : msg
+      )
+    );
+  };
+
+  const audio = async (text: string, aiMessageId: string) => {
+    const response = await fetch("http://localhost:8000/audio", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ message: text, files: audioBase64 }),
+    });
+    if (!response.body) return;
+    const data = await response.json();
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === aiMessageId
+          ? {
+              ...msg,
+              content: data.message || data, // Adjust based on your API response structure
+              streaming: false,
+            }
+          : msg
+      )
+    );
+  };
+
+  const voicePrompt = async (text: string, aiMessageId: string) => {
+    console.log(JSON.stringify({ message: text, audioFile: audioBase64 }));
+
+    const response = await fetch("http://localhost:8000/voice", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ message: text, audioFile: audioBase64 }),
     });
     if (!response.body) return;
     const data = await response.json();
@@ -172,8 +223,10 @@ export default function Chat() {
               input={input}
               setInput={setInput}
               isSubmitting={isSubmitting}
+              setAudioBase64={setAudioBase64}
               base64={base64}
               setBase64={setBase64}
+              audioBase64={audioBase64}
             ></ChatInput>
             {/* <SpeechToText input={input} setInput={setInput}></SpeechToText> */}
           </Form>
